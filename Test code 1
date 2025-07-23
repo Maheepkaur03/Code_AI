@@ -1,0 +1,180 @@
+import fitz  # PyMuPDF
+import subprocess
+import json
+import re
+from pathlib import Path
+from tabulate import tabulate
+import pandas as pd
+
+PDF_PATH = Path("SUZLON.pdf")
+OUTPUT_XLSX = Path("RESULT.xlsx")
+OLLAMA_MODEL = "gemma3:12b"
+
+def extract_relevant_pages(pdf_path: Path) -> list:
+    doc = fitz.open(pdf_path)
+    pages = []
+    for i, page in enumerate(doc):
+        text = page.get_text()
+        if any(k in text.lower() for k in ["current liabilities", "non-current liabilities", "contingent liabilities", "unbilled revenue"]):
+            pages.append((i + 1, text))
+    return pages
+
+def build_prompt_liabilities(page_text: str, page_num: int) -> str:
+    return f"""
+IMPORTANT: Return ONLY valid JSON. No explanations or additional text.
+
+You are analyzing page {page_num} of an annual report. Only proceed if the page contains any of the following headings:
+- "Balance Sheet"
+- "Consolidated Balance Sheet"
+- "Standalone Balance Sheet"
+
+Your task is to extract rows under the sections "Current Liabilities" or "Non-Current Liabilities".
+
+Only extract rows where the `dues_type` matches exactly one of:
+- "Total Outstanding dues of Micro Enterprises and Small Enterprises"
+- "Total Outstanding dues of other than Micro Enterprises and Small Enterprises"
+
+Do NOT extract:
+- Any rows from explanatory paragraphs or narrative text
+- Any rows under “Notes to Standalone Financial Statements” or “Notes to Consolidated Financial Statements”
+- Any rows under or referencing "Note", "Note:", or containing footnote-style information
+- Any unrelated rows like "Add: Accrued Expenses", "Others", "Total", or unclear/miscellaneous labels
+
+Stop processing immediately if the section "Notes to Standalone Financial Statements" or "Notes to Consolidated Financial Statements" is detected anywhere on the page.
+
+For each valid row in the aging table, extract the following fields:
+- `dues_type` (exactly as shown in the table)
+- `not_due`
+- `less_than_1_year`
+- `one_to_two_years`
+- `two_to_three_years`
+- `more_than_3_years`
+- `total_as_of_31_03_2024`
+- `total_as_of_31_03_2023`
+
+📤 Return the data as a valid JSON list of dictionaries.
+
+TEXT:
+----------------
+{page_text}
+----------------
+"""
+
+def build_prompt_contingent_liabilities(page_text: str, page_num: int) -> str:
+    return f"""
+IMPORTANT: Return ONLY valid JSON. No explanations or additional text.
+
+You are analyzing page {page_num} of an annual report. Your task is to extract the full table under the heading:
+**"Contingent liabilities"** → specifically under the subheading:
+**"Claims against the company not acknowledged as debt"**
+
+Look for a table that has columns like:
+- "As at March 31, 2024"
+- "As at March 31, 2023"
+
+Extract every row under this table, and return each row as a dictionary with:
+- `particulars`: the row label (e.g., nature of claim)
+- `as_at_31_03_2024`: corresponding value in 2024 column
+- `as_at_31_03_2023`: corresponding value in 2023 column
+
+⚠️ Do NOT extract any paragraph or narrative text.
+⚠️ Skip notes, footnotes, or non-tabular content.
+⚠️ If the table is not found on this page, return an empty list: []
+
+TEXT:
+----------------
+{page_text}
+----------------
+"""
+
+def build_prompt_unbilled_revenue(page_text: str, page_num: int) -> str:
+    return f"""
+IMPORTANT: Return ONLY valid JSON. No explanations or additional text.
+
+You are analyzing page {page_num} of an annual report.
+
+Your task is to extract the row labeled "Unbilled Revenue"  from a financial table.
+
+Return a single row only with the following fields:
+- `label`
+- `as_at_31_03_2023`
+- `as_at_31_03_2022`
+
+If no such row exists on this page, return an empty list: []
+
+TEXT:
+----------------
+{page_text}
+----------------
+"""
+
+def query_llama(prompt: str, model: str = OLLAMA_MODEL) -> str:
+    result = subprocess.run(
+        ["ollama", "run", model],
+        input=prompt,
+        text=True,
+        encoding="utf-8",
+        capture_output=True
+    )
+    return result.stdout.strip()
+
+def extract_json_from_text(text: str) -> str:
+    match = re.search(r'(\[.*\])', text, re.DOTALL)
+    if match:
+        return match.group(1)
+    return text
+
+def print_table_from_json(json_str: str, page_num: int, section: str):
+    try:
+        cleaned_json = extract_json_from_text(json_str)
+        data = json.loads(cleaned_json)
+        if isinstance(data, list) and data:
+            print(f"\n📄 Page {page_num} [{section}]: Found Entries")
+            print(tabulate(data, headers="keys", tablefmt="grid"))
+            for row in data:
+                row['page_num'] = page_num
+                row['section'] = section
+            return data
+        else:
+            print(f"\n📄 Page {page_num} [{section}]: No relevant structured data.")
+            return []
+    except json.JSONDecodeError:
+        print(f"\n📄 Page {page_num} [{section}]: ❌ LLaMA output not JSON")
+        print(json_str)
+        return []
+
+if __name__ == "__main__":
+    if not PDF_PATH.exists():
+        raise FileNotFoundError(f"Missing PDF file: {PDF_PATH}")
+
+    print("🔍 Scanning PDF for relevant pages...")
+    relevant_pages = extract_relevant_pages(PDF_PATH)
+    all_results = []
+
+    for page_num, page_text in relevant_pages:
+        print(f"\n🧠 Processing page {page_num} for liabilities...")
+        liabilities_prompt = build_prompt_liabilities(page_text, page_num)
+        liabilities_response = query_llama(liabilities_prompt)
+        liabilities_data = print_table_from_json(liabilities_response, page_num, section="Liabilities")
+        all_results.extend(liabilities_data)
+
+        print(f"\n🧠 Processing page {page_num} for contingent liabilities...")
+        contingent_prompt = build_prompt_contingent_liabilities(page_text, page_num)
+        contingent_response = query_llama(contingent_prompt)
+        contingent_data = print_table_from_json(contingent_response, page_num, section="Contingent Liabilities")
+        all_results.extend(contingent_data)
+
+        print(f"\n🧠 Processing page {page_num} for unbilled revenue...")
+        unbilled_prompt = build_prompt_unbilled_revenue(page_text, page_num)
+        unbilled_response = query_llama(unbilled_prompt)
+        unbilled_data = print_table_from_json(unbilled_response, page_num, section="Unbilled Revenue")
+        all_results.extend(unbilled_data)
+
+    if all_results:
+        df = pd.DataFrame(all_results)
+        df.to_excel(OUTPUT_XLSX, index=False)
+        print(f"\n📁 Results saved to: {OUTPUT_XLSX}")
+    elif not relevant_pages:
+        print("❗ No pages with matching keywords found.")
+    else:
+        print("❗ No data extracted to save.")
