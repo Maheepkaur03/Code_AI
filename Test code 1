@@ -6,7 +6,7 @@ from pathlib import Path
 from tabulate import tabulate
 import pandas as pd
 
-PDF_PATH = Path("SUZLON.pdf")
+PDF_PATH = Path("NEERCARE.pdf")
 OUTPUT_XLSX = Path("RESULT.xlsx")
 OLLAMA_MODEL = "gemma3:12b"
 
