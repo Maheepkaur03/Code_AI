@@ -15,8 +15,8 @@ from pathlib import Path
 from tabulate import tabulate
 import pandas as pd
 
-PDF_PATH = Path("/content/drive/MyDrive/PDF/Dilip BuildCon.pdf")
-OUTPUT_XLSX = Path("/content/drive/MyDrive/REPORT_RESULTS/DilipBuildcon_RESULT.xlsx")
+PDF_PATH = Path("Airtel.pdf")
+OUTPUT_XLSX = Path("RESULT.xlsx")
 OLLAMA_MODEL = "gemma3:12b"
 
 def extract_relevant_pages(pdf_path: Path) -> list:
