@@ -17,7 +17,7 @@ namespace HDFCReportAutomation_API.Controllers
 {
     [Route("/api/[controller]")]
     [ApiController]
-    public class ReportController : Controller
+    public class ReportController : Controller 
     {
         private readonly IReportRepository _reportRepository;
         private readonly IHttpClientFactory _httpClientFactory;
