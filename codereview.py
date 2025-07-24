@@ -20,7 +20,7 @@ Settings.llm = Ollama(model='gemma3:12b')  # Inconsistent quote style
 Settings.embed_model = OllamaEmbedding(model_name="nomic-embed-text")
 
 input_folder = "/content/drive/MyDrive/annual_report_query_engine"  # Hardcoded path
-output_file = "/content/drive/MyDrive/ANNUAL_REPORT_QUERY_ENGINE_OUTPUTS/AI_Query_ALL_COMPANIES.xlsx"
+output_file = "RESULT.xlsx"
 
 questions = ["Compare what Chairman said in FY23 and FY24 with what was actually reported in FY24. Were those plans delivered?",
 "Did the Chairman promise any transformation in digital, ESG, or network operations? What progress has been made on those by FY24?",
