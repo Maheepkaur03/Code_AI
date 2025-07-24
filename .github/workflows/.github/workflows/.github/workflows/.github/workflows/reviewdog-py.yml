@@ -1,0 +1,31 @@
+name: reviewdog-flake8 (Python)
+
+on:
+  pull_request:
+    paths:
+      - '**/*.py'
+
+jobs:
+  lint-python:
+    name: Lint Python code with flake8
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: Run flake8 with reviewdog
+        uses: reviewdog/action-flake8@v3
+        with:
+          reporter: github-pr-review
+          level: warning
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
