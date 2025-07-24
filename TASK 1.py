@@ -10,7 +10,7 @@ Original file is located at
 import fitz  # PyMuPDF
 import subprocess
 import json
-import re
+import 
 from pathlib import Path
 from tabulate import tabulate
 import pandas as pd
