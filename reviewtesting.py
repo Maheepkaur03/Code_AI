@@ -9,11 +9,11 @@ import os
 Settings.llm = Ollama(model="gemma3:12b")
 Settings.embed_model = OllamaEmbedding(model_name="nomic-embed-text")
 
-# Define your folder containing company PDFs
+# Define folder containing company PDFs and output Excel path
 input_folder = "/content/drive/MyDrive/annual_report_query_engine"
 output_file = "/content/drive/MyDrive/ANNUAL_REPORT_QUERY_ENGINE_OUTPUTS/AI_Query_ALL_COMPANIES.xlsx"
 
-# Define your 10 questions
+# Define analysis questions
 questions = [
     "Compare what Chairman said in FY23 and FY24 with what was actually reported in FY24. Were those plans delivered?",
     "Did the Chairman promise any transformation in digital, ESG, or network operations? What progress has been made on those by FY24?",
@@ -27,22 +27,21 @@ questions = [
     "Summarize the key positives and negatives based on financial analysis of the Profit and Loss statement, Balance Sheet, Cash Flow Statement, and Notes to Accounts. Include metrics like revenue, profit, net worth, borrowings, trade payables, trade receivables, inventory, cash and cash equivalents, related party transactions, and contingent liabilities."
 ]
 
-
-# Create result container
+# Store all results
 all_results = []
 
-# Iterate through each file in the folder
-for idx, file_name in enumerate(sorted(os.listdir(input_folder))):
-    if file_name.endswith(".pdf"):
+# Iterate through each PDF
+for file_name in sorted(os.listdir(input_folder)):
+    if file_name.lower().endswith(".pdf"):
         company_path = os.path.join(input_folder, file_name)
-        company_name = os.path.splitext(file_name)[0]  # filename without extension
+        company_name = os.path.splitext(file_name)[0]
 
-        # Load the current PDF file as a single-document index
+        # Load PDF and build query engine
         docs = SimpleDirectoryReader(input_files=[company_path]).load_data()
-        index = VectorStoreIndex.from_documents(docs);
+        index = VectorStoreIndex.from_documents(docs)
         query_engine = index.as_query_engine()
 
-        # Ask each question for this company
+        # Process each question
         for q in questions:
             print(f"\n📄 Company: {company_name}\n🔍 Question: {q}")
             response = query_engine.query(q)
@@ -55,9 +54,7 @@ for idx, file_name in enumerate(sorted(os.listdir(input_folder))):
                 "Answer": response.response
             })
 
-# Convert results to DataFrame
+# Save results to Excel
 df = pd.DataFrame(all_results)
-
-# Save to Excel
 df.to_excel(output_file, index=False)
 print(f"\n✅ Results saved to: {output_file}")
