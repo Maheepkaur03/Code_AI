@@ -1,0 +1,48 @@
+name: Reviewdog
+
+on: [pull_request]
+
+jobs:
+  lint:
+    name: Run linters and reviewdog
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Python tools
+        run: |
+          pip install flake8 bandit
+
+      - name: Run flake8 with reviewdog
+        run: |
+          flake8 . --format=default \
+          | reviewdog -efm="%f:%l:%c: %m" -name=flake8 -reporter=github-pr-review -fail-on-error=false
+
+      - name: Run bandit with reviewdog
+        run: |
+          bandit -r . -f custom \
+          | reviewdog -efm="%f:%l: %m" -name=bandit -reporter=github-pr-review -fail-on-error=false
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '7.x'
+
+      - name: Install dotnet-format
+        run: dotnet tool install -g dotnet-format
+
+      - name: Run dotnet-format with reviewdog
+        run: |
+          export PATH="$PATH:/home/runner/.dotnet/tools"
+          dotnet-format --check --verbosity diagnostic \
+          | reviewdog -efm="%f(%l,%c): %m" -name=dotnet-format -reporter=github-pr-review -fail-on-error=false
+
+      - name: Install reviewdog
+        uses: reviewdog/action-install@v1
