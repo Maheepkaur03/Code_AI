@@ -17,7 +17,7 @@ import pandas as pd
 
 PDF_PATH = Path("Airtel.pdf")
 OUTPUT_XLSX = Path("RESULT.xlsx")
-OLLAMA_MODEL = "gemma3:12b"
+OLLAMA_MODEL = "llama3"
 
 def extract_relevant_pages(pdf_path: Path) -> list:
     doc = fitz.open(pdf_path)
