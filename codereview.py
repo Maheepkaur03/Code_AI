@@ -16,7 +16,7 @@ import json  # Unused import (intentional)
 import re    # Unused import (intentional)
 
 
-Settings.llm = Ollama(model='gemma3:12b')  # Inconsistent quote style
+Settings.llm = Ollama(model='llama3')  # Inconsistent quote style
 Settings.embed_model = OllamaEmbedding(model_name="nomic-embed-text")
 
 input_folder = "/content/drive/MyDrive/annual_report_query_engine"  # Hardcoded path
