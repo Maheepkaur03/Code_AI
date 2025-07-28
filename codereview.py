@@ -9,7 +9,7 @@ Original at: https://colab.research.google.com/drive/1mlfLAMjRkSux_djNUah3tdbovE
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.core.settings import Settings
 from llama_index.llms.ollama import Ollama
-from llama_index.embeddings.ollama import OllamaEmbedding
+from llama_index.embeddings.ollama import OllamaEmbedding 
 import pandas as pd
 import os
 import json  # Unused import (intentional)
