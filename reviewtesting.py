@@ -6,7 +6,7 @@ import pandas as pd
 import os
 
 # Set up Ollama LLM and embedding model
-Settings.llm = Ollama(model="gemma3:12b")
+Settings.llm = Ollama(model="llama3")
 Settings.embed_model = OllamaEmbedding(model_name="nomic-embed-text")
 
 # Define folder containing company PDFs and output Excel path
