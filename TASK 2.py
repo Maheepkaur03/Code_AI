@@ -52,14 +52,14 @@ def send_message():
     chat_window.insert(tk.END, "You: " + user_input + "\n", 'user')
 
     if user_input.lower() == "bye":
-        chat_window.insert(tk.END, "Chatbot: Bye 👋\n", 'bot')
+        chat_window.insert(tk.END, "Chatbot: Bye \n", 'bot')
         entry.delete(0, tk.END)
         return
 
     if user_input.lower() == "okay":
-        chat_window.insert(tk.END, "Chatbot: Thank you! 😊\n", 'bot')
+        chat_window.insert(tk.END, "Chatbot: Thank you! \n", 'bot')
     elif "how are you" in user_input.lower():
-        chat_window.insert(tk.END, "Chatbot: I'm good, thank you! How are you? How can I help you today? 😊\n", 'bot')
+        chat_window.insert(tk.END, "Chatbot: I'm good, thank you! How are you? How can I help you today? \n", 'bot')
     else:
         bot_response = get_response(user_input)
         chat_window.insert(tk.END, "Chatbot: " + bot_response + "\n", 'bot')
@@ -76,7 +76,7 @@ chat_window = scrolledtext.ScrolledText(root, wrap=tk.WORD, width=70, height=20,
 chat_window.pack(padx=10, pady=10)
 chat_window.tag_config('user', foreground='lightblue')
 chat_window.tag_config('bot', foreground='lightgreen')
-chat_window.insert(tk.END, "Chatbot: Hello! I am your chatbot 🤖. How can I help you today?\n\n", 'bot')
+chat_window.insert(tk.END, "Chatbot: Hello! I am your chatbot. How can I help you today?\n\n", 'bot')
 
 entry = tk.Entry(root, width=60, font=("Segoe UI", 12), bg="#3a3f4b", fg="white", insertbackground="white")
 entry.pack(padx=10, pady=5)
@@ -86,3 +86,4 @@ send_button = tk.Button(root, text="Send", command=send_message, font=("Segoe UI
 send_button.pack(pady=5)
 
 root.mainloop()
+
